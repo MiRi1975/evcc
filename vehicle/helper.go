@@ -44,3 +44,45 @@ func ensureVehicle(vin string, fun func() ([]string, error)) (string, error) {
 
 	return vin, err
 }
+
+// ensureVehicle2 is the simple wrapper around the generic version
+func ensureVehicle2(vin string, fun func() ([]string, error)) (string, error) {
+	vin, _, err := ensureVehicleGen[string, string](vin, fun, func(v string) (string, string) {
+		return v, v
+	})
+
+	return vin, err
+}
+
+// ensureVehicleGen is the generic version of ensureVehicle
+func ensureVehicleGen[T, R any](
+	vin string,
+	list func() ([]T, error),
+	extract func(T) (string, R),
+) (string, R, error) {
+	vehicles, err := list()
+	if err != nil {
+		return "", *new(R), fmt.Errorf("cannot get vehicles: %w", err)
+	}
+
+	if vin = strings.ToUpper(vin); vin != "" {
+		// vin defined but doesn't exist
+		for _, vehicle := range vehicles {
+			if vin2, res := extract(vehicle); vin2 == vin {
+				return vin2, res, nil
+			}
+		}
+
+		err = fmt.Errorf("cannot find vehicle: %s", vin)
+	} else {
+		// vin empty
+		if len(vehicles) == 1 {
+			vin, res := extract(vehicles[0])
+			return vin, res, nil
+		}
+
+		err = fmt.Errorf("cannot find vehicle: %v", vehicles)
+	}
+
+	return "", *new(R), err
+}

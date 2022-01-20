@@ -43,7 +43,7 @@ type Tronity struct {
 	log   *util.Logger
 	oc    *oauth2.Config
 	vid   string
-	bulkG func() (interface{}, error)
+	bulkG func() (tronity.Bulk, error)
 }
 
 func init() {
@@ -134,7 +134,7 @@ func NewTronityFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 	}
 
 	v.vid = vehicle.ID
-	v.bulkG = provider.NewCached(v.bulk, cc.Cache).InterfaceGetter()
+	v.bulkG = provider.Cached[tronity.Bulk](v.bulk, cc.Cache)
 
 	var status func() (api.ChargeStatus, error)
 	if funk.ContainsString(vehicle.Scopes, tronity.ReadCharge) {
@@ -189,7 +189,7 @@ func (v *Tronity) vehicles() ([]tronity.Vehicle, error) {
 }
 
 // bulk implements the bulk api
-func (v *Tronity) bulk() (interface{}, error) {
+func (v *Tronity) bulk() (tronity.Bulk, error) {
 	uri := fmt.Sprintf("%s/v1/vehicles/%s/bulk", tronity.URI, v.vid)
 
 	var res tronity.Bulk
@@ -201,12 +201,7 @@ func (v *Tronity) bulk() (interface{}, error) {
 // SoC implements the api.Vehicle interface
 func (v *Tronity) SoC() (float64, error) {
 	res, err := v.bulkG()
-
-	if res, ok := res.(tronity.Bulk); err == nil && ok {
-		return res.Level, nil
-	}
-
-	return 0, err
+	return res.Level, err
 }
 
 // status implements the api.ChargeState interface
@@ -214,7 +209,7 @@ func (v *Tronity) status() (api.ChargeStatus, error) {
 	status := api.StatusA // disconnected
 	res, err := v.bulkG()
 
-	if res, ok := res.(tronity.Bulk); err == nil && ok {
+	if err == nil {
 		if res.Charging == "Charging" {
 			status = api.StatusC
 		}
@@ -228,23 +223,13 @@ var _ api.VehicleRange = (*Tronity)(nil)
 // Range implements the api.VehicleRange interface
 func (v *Tronity) Range() (int64, error) {
 	res, err := v.bulkG()
-
-	if res, ok := res.(tronity.Bulk); err == nil && ok {
-		return int64(res.Range), nil
-	}
-
-	return 0, err
+	return int64(res.Range), err
 }
 
 // odometer implements the api.VehicleOdometer interface
 func (v *Tronity) odometer() (float64, error) {
 	res, err := v.bulkG()
-
-	if res, ok := res.(tronity.Bulk); err == nil && ok {
-		return res.Odometer, nil
-	}
-
-	return 0, err
+	return res.Odometer, err
 }
 
 func (v *Tronity) post(uri string) error {

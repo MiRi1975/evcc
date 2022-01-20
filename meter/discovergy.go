@@ -18,7 +18,7 @@ func init() {
 }
 
 type Discovergy struct {
-	dataG func() (interface{}, error)
+	dataG func() (discovergy.Reading, error)
 	scale float64
 }
 
@@ -68,12 +68,12 @@ func NewDiscovergyFromConfig(other map[string]interface{}) (api.Meter, error) {
 		}))
 	}
 
-	dataG := provider.NewCached(func() (interface{}, error) {
+	dataG := provider.Cached[discovergy.Reading](func() (discovergy.Reading, error) {
 		var res discovergy.Reading
 		uri := fmt.Sprintf("%s/last_reading?meterId=%s", discovergy.API, meterID)
 		err := client.GetJSON(uri, &res)
 		return res, err
-	}, cc.Cache).InterfaceGetter()
+	}, cc.Cache)
 
 	m := &Discovergy{
 		dataG: dataG,
@@ -91,18 +91,12 @@ var _ api.Meter = (*Discovergy)(nil)
 
 func (m *Discovergy) CurrentPower() (float64, error) {
 	res, err := m.dataG()
-	if res, ok := res.(discovergy.Reading); err == nil && ok {
-		return m.scale * float64(res.Values.Power) / 1e3, nil
-	}
-	return 0, err
+	return m.scale * float64(res.Values.Power) / 1e3, err
 }
 
 var _ api.MeterEnergy = (*Discovergy)(nil)
 
 func (m *Discovergy) TotalEnergy() (float64, error) {
 	res, err := m.dataG()
-	if res, ok := res.(discovergy.Reading); err == nil && ok {
-		return float64(res.Values.Energy) / 1e10, nil
-	}
-	return 0, err
+	return float64(res.Values.Energy) / 1e10, err
 }
