@@ -235,15 +235,7 @@ var _ api.VehicleOdometer = (*Ovms)(nil)
 // Odometer implements the api.VehicleOdometer interface
 func (v *Ovms) Odometer() (float64, error) {
 	res, err := v.statusG()
-
-	if err == nil {
-		odometer, err := strconv.ParseFloat(res.Odometer, 64)
-		if err == nil {
-			return odometer / 10, nil
-		}
-	}
-
-	return 0, err
+	return res.Odometer / 10, err
 }
 
 var _ api.VehicleFinishTimer = (*Ovms)(nil)
@@ -251,15 +243,7 @@ var _ api.VehicleFinishTimer = (*Ovms)(nil)
 // FinishTime implements the api.VehicleFinishTimer interface
 func (v *Ovms) FinishTime() (time.Time, error) {
 	res, err := v.chargeG()
-
-	if err == nil {
-		cef, err := strconv.ParseInt(res.ChargeEtrFull, 0, 64)
-		if err == nil {
-			return time.Now().Add(time.Duration(cef) * time.Minute), nil
-		}
-	}
-
-	return time.Time{}, err
+	return time.Now().Add(time.Duration(res.ChargeEtrFull) * time.Minute), err
 }
 
 // VehiclePosition returns the vehicles position in latitude and longitude
