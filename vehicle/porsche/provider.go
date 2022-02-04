@@ -53,9 +53,9 @@ func (v *Provider) SoC() (float64, error) {
 		}
 	}
 
-	res, err := v.emobilityG()
+	res3, err := v.emobilityG()
 	if err == nil {
-		return float64(res.BatteryChargeStatus.StateOfChargeInPercentage), nil
+		return float64(res3.BatteryChargeStatus.StateOfChargeInPercentage), nil
 	}
 
 	res2, err := v.statusG()
@@ -81,9 +81,9 @@ func (v *Provider) Range() (int64, error) {
 		}
 	}
 
-	res, err := v.emobilityG()
+	res3, err := v.emobilityG()
 	if err == nil {
-		return res.BatteryChargeStatus.RemainingERange.ValueInKilometers, nil
+		return res3.BatteryChargeStatus.RemainingERange.ValueInKilometers, nil
 	}
 
 	res2, err := v.statusG()
@@ -116,9 +116,9 @@ func (v *Provider) FinishTime() (time.Time, error) {
 		}
 	}
 
-	res, err := v.emobilityG()
+	res2, err := v.emobilityG()
 	if err == nil {
-		return time.Now().Add(time.Duration(res.BatteryChargeStatus.RemainingChargeTimeUntil100PercentInMinutes) * time.Minute), err
+		return time.Now().Add(time.Duration(res2.BatteryChargeStatus.RemainingChargeTimeUntil100PercentInMinutes) * time.Minute), err
 	}
 
 	return time.Time{}, err
@@ -152,17 +152,17 @@ func (v *Provider) Status() (api.ChargeStatus, error) {
 		}
 	}
 
-	res, err := v.emobilityG()
+	res2, err := v.emobilityG()
 	if err == nil {
-		switch res.BatteryChargeStatus.PlugState {
+		switch res2.BatteryChargeStatus.PlugState {
 		case "DISCONNECTED":
 			return api.StatusA, nil
 		case "CONNECTED":
 			// ignore if the car is connected to a DC charging station
-			if res.BatteryChargeStatus.ChargingInDCMode {
+			if res2.BatteryChargeStatus.ChargingInDCMode {
 				return api.StatusA, nil
 			}
-			switch res.BatteryChargeStatus.ChargingState {
+			switch res2.BatteryChargeStatus.ChargingState {
 			case "ERROR":
 				return api.StatusF, nil
 			case "OFF", "COMPLETED":
@@ -170,7 +170,7 @@ func (v *Provider) Status() (api.ChargeStatus, error) {
 			case "ON", "CHARGING":
 				return api.StatusC, nil
 			default:
-				return api.StatusNone, errors.New("emobility - unknown charging state: " + res.BatteryChargeStatus.ChargingState)
+				return api.StatusNone, errors.New("emobility - unknown charging state: " + res2.BatteryChargeStatus.ChargingState)
 			}
 		}
 	}
@@ -193,15 +193,15 @@ func (v *Provider) Climater() (active bool, outsideTemp float64, targetTemp floa
 		}
 	}
 
-	res, err := v.emobilityG()
+	res2, err := v.emobilityG()
 	if err == nil {
-		switch res.DirectClimatisation.ClimatisationState {
+		switch res2.DirectClimatisation.ClimatisationState {
 		case "OFF":
 			return false, 20, 20, nil
 		case "ON":
 			return true, 20, 20, nil
 		default:
-			return active, outsideTemp, targetTemp, errors.New("emobility - unknown climate state: " + res.DirectClimatisation.ClimatisationState)
+			return active, outsideTemp, targetTemp, errors.New("emobility - unknown climate state: " + res2.DirectClimatisation.ClimatisationState)
 		}
 	}
 
@@ -223,9 +223,9 @@ func (v *Provider) Odometer() (float64, error) {
 		}
 	}
 
-	res, err := v.statusG()
+	res2, err := v.statusG()
 	if err == nil {
-		return res.Mileage.Value, nil
+		return res2.Mileage.Value, nil
 	}
 
 	return 0, err
